@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Static Testing Checkpoint — Hiba Hantous</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #7c5cfc;
+      --accent2: #e05cfc;
+      --defect: #fc5c7c;
+      --ok: #5cfca0;
+      --warn: #fcb45c;
+      --info: #5cc8fc;
+      --text: #e8e8f0;
+      --muted: #7070a0;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --display: 'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,92,252,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,92,252,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 60px 24px 120px;
+    }
+
+    /* ── HEADER ── */
+    header { margin-bottom: 56px; animation: fadeUp 0.7s ease both; }
+
+    .tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 4px 10px;
+      border-radius: 3px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: var(--display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 580px;
+      line-height: 1.65;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 28px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .meta-item span { color: var(--text); }
+
+    /* ── FORMAL REPORT BLOCK ── */
+    .formal-report {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 32px 36px;
+      margin-bottom: 56px;
+      animation: fadeUp 0.6s ease both;
+      animation-delay: 0.1s;
+    }
+
+    .formal-report h2 {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 40px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 600px) { .report-grid { grid-template-columns: 1fr; } }
+
+    .report-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .report-field .label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .report-field .value {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .report-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    .report-summary {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: #b0b0cc;
+    }
+
+    .report-summary strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ── SCOPE TABLE ── */
+    .scope-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .scope-table th {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scope-table td {
+      padding: 10px 12px;
+      color: #c0c0d8;
+      border-bottom: 1px solid rgba(42,42,58,0.5);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .scope-table tr:last-child td { border-bottom: none; }
+    .scope-table td:first-child { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .scope-table td:nth-child(2) { color: var(--text); font-weight: 500; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 48px 0 24px;
+    }
+
+    .section-header h3 {
+      font-family: var(--display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── CARDS ── */
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      animation: fadeUp 0.6s ease both;
+      transition: border-color 0.25s;
+    }
+
+    .card:hover { border-color: rgba(124,92,252,0.5); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .card-num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      min-width: 52px;
+      letter-spacing: 0.08em;
+    }
+
+    .card-title {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-defect { background: rgba(252,92,124,0.15); color: var(--defect); border: 1px solid rgba(252,92,124,0.3); }
+    .badge-warn   { background: rgba(252,180,92,0.12); color: var(--warn);   border: 1px solid rgba(252,180,92,0.3); }
+    .badge-info   { background: rgba(92,200,252,0.12); color: var(--info);   border: 1px solid rgba(92,200,252,0.3); }
+
+    .card-body {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .section-content {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: #c0c0d8;
+    }
+
+    .code-block {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #a0a0c8;
+      margin-top: 10px;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pill-purple { border-color: rgba(124,92,252,0.5); color: #a080ff; }
+    .pill-pink   { border-color: rgba(224,92,252,0.5); color: #d080ff; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .sub-section {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .principle-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* Role row */
+    .role-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) { .role-row { grid-template-columns: 1fr; } }
+
+    .role-box {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .role-box .role-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .role-scribe  .role-label { color: var(--info); }
+    .role-actor   .role-label { color: var(--warn); }
+    .role-stmt    .role-label { color: #a080ff; }
+
+    .role-box .role-value {
+      font-size: 12.5px;
+      color: #c0c0d8;
+      line-height: 1.5;
+    }
+
+    .cascade-box {
+      background: rgba(252,92,124,0.05);
+      border: 1px solid rgba(252,92,124,0.2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #d0a0b0;
+    }
+
+    .cascade-box::before {
+      content: '⚠ cascade risk';
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--defect);
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .recommendation-box {
+      background: rgba(92,252,160,0.04);
+      border: 1px solid rgba(92,252,160,0.2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #a0d8b8;
+    }
+
+    .recommendation-box::before {
+      content: '✦ recommendation';
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #5cfca0;
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .severity-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .severity-high   { color: var(--defect); }
+    .severity-medium { color: var(--warn); }
+    .severity-low    { color: var(--info); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 60%);
+      margin-bottom: 48px;
+      opacity: 0.35;
+    }
+
+    /* ── CONCLUSION ── */
+    .conclusion {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent2);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-top: 56px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .conclusion h3 {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 16px;
+    }
+
+    .conclusion p {
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: #b0b0cc;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 64px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.10s; }
+    .card:nth-child(3) { animation-delay: 0.15s; }
+    .card:nth-child(4) { animation-delay: 0.20s; }
+    .card:nth-child(5) { animation-delay: 0.25s; }
+    .card:nth-child(6) { animation-delay: 0.30s; }
+    .card:nth-child(7) { animation-delay: 0.35s; }
+    .card:nth-child(8) { animation-delay: 0.40s; }
+
+    /* ── CHECKLIST ── */
+    .checklist-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) { .checklist-wrap { grid-template-columns: 1fr; } }
+
+    .checklist-block {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .checklist-block .section-label { margin-bottom: 10px; }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #c0c0d8;
+    }
+
+    .checklist li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      margin-top: 1px;
+    }
+
+    .checklist li.fail::before {
+      background: rgba(252,92,124,0.2);
+      border: 1px solid rgba(252,92,124,0.5);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cline x1='3' y1='3' x2='11' y2='11' stroke='%23fc5c7c' stroke-width='2'/%3E%3Cline x1='11' y1='3' x2='3' y2='11' stroke='%23fc5c7c' stroke-width='2'/%3E%3C/svg%3E");
+    }
+
+    .checklist li.pass::before {
+      background: rgba(92,252,160,0.12);
+      border: 1px solid rgba(92,252,160,0.4);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2,7 6,11 12,3' fill='none' stroke='%235cfca0' stroke-width='2'/%3E%3C/svg%3E");
+    }
+
+    .checklist li.warn::before {
+      background: rgba(252,180,92,0.12);
+      border: 1px solid rgba(252,180,92,0.4);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Ctext x='3' y='11' font-size='11' fill='%23fcb45c'%3E~%3C/text%3E%3C/svg%3E");
+    }
+
+    .enhance-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .enhance-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #a0a8d8;
+    }
+
+    .enhance-list li::before {
+      content: '↗';
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header>
+    <div class="tag">GOMYCODE · Checkpoint — Static Testing</div>
+    <h1>Individual Review Report<br/>Login &amp; Password Form</h1>
+    <p class="subtitle">Formal static review of a login/password validation module — examining specification consistency and code correctness without execution.</p>
+    <div class="meta-row">
+      <div class="meta-item">Items reviewed <span>08</span></div>
+      <div class="meta-item">Defects <span>06</span></div>
+      <div class="meta-item">Observations <span>02</span></div>
+      <div class="meta-item">Scope <span>Specs + Source Code</span></div>
+      <div class="meta-item">Author <span>Hiba Hantous</span></div>
+    </div>
+  </header>
+
+  <!-- ══════════════ FORMAL REPORT BLOCK ══════════════ -->
+  <div class="formal-report">
+    <h2>// Formal Report Header</h2>
+    <div class="report-grid">
+      <div class="report-field">
+        <span class="label">Project Name</span>
+        <span class="value">Login &amp; Password Validation Form</span>
+      </div>
+      <div class="report-field">
+        <span class="label">Review Type</span>
+        <span class="value">Formal Review — Individual Review Phase</span>
+      </div>
+      <div class="report-field">
+        <span class="label">Testing Date</span>
+        <span class="value">March 14, 2025</span>
+      </div>
+      <div class="report-field">
+        <span class="label">Reviewer</span>
+        <span class="value">Hiba Hantous</span>
+      </div>
+      <div class="report-field">
+        <span class="label">Participants</span>
+        <span class="value">Test Manager (distributed), Reviewer (Hiba Hantous)</span>
+      </div>
+      <div class="report-field">
+        <span class="label">Review Stage</span>
+        <span class="value">Individual Review — findings to be communicated to review team</span>
+      </div>
+    </div>
+    <div class="report-divider"></div>
+    <div class="report-field" style="margin-bottom:16px">
+      <span class="label">Scope</span>
+    </div>
+    <table class="scope-table">
+      <thead>
+        <tr>
+          <th>Artifact</th>
+          <th>Description</th>
+          <th>Authored by</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>specifications.md</td>
+          <td>Four rules defining login and password constraints for the form</td>
+          <td>Requirements writer / product owner</td>
+        </tr>
+        <tr>
+          <td>validationForm.js</td>
+          <td>JavaScript function implementing email and password validation logic</td>
+          <td>Developer</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="report-divider"></div>
+    <p class="report-summary">
+      This individual review was conducted as part of a formal review process initiated by the test manager.
+      The work products under review are a <strong>specification document</strong> (4 rules) and a <strong>source code snippet</strong> (21 lines, JavaScript).
+      The review was performed statically — no code was executed. The goal was to assess the quality of both artifacts independently
+      and in relation to each other, identify anomalies, and produce findings to communicate to the review team.
+      A total of <strong>3 specification anomalies</strong> and <strong>5 code anomalies</strong> were identified, including contradictions,
+      missing constraints, a scope reduction not authorised by the specifications, and a structural flag.
+    </p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════ SECTION: SPECIFICATIONS ══════════════ -->
+  <div class="section-header">
+    <h3>Specification Anomalies</h3>
+  </div>
+
+  <div class="cards">
+
+    <!-- SPEC 01 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">SPEC 01</span>
+        <span class="card-title">Contradictory Login Constraints — Rules 1 and 3</span>
+        <span class="badge badge-defect">defect · high</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">Specification document — Rules 1 and 3</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Requirements writer / product owner</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Internal contradiction between two rules</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            Rule 1 states the login must be a valid email address, which by definition follows a constrained format: a local part, an @ symbol, and a domain. Rule 3 states the login can contain any character. These two rules are mutually exclusive. A valid email address does not permit characters such as spaces, angle brackets, or control characters — accepting "any character" would produce strings that fail email validation. The specification gives no priority order between conflicting rules, leaving the developer with no deterministic instruction to follow.
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P3 — Early Testing</span>
+              <span class="pill pill-purple">P6 — Context Dependent</span>
+            </div>
+            <p class="principle-note">Catching this contradiction at specification review prevents two entire development cycles: one where the developer implements email format validation, another where they're told to relax it — or vice versa. The earlier the review, the cheaper the fix.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Static Testing</span>
+              <span class="pill">Specification Review</span>
+              <span class="pill">Consistency Check</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Remove Rule 3 entirely, or rewrite it to say "the login may contain any character permitted by the RFC 5321 email address format." If the intent is to allow unusual but valid email addresses (e.g. quoted local parts), specify that explicitly with examples. The two rules cannot coexist as written.
+        </div>
+
+        <div class="cascade-box">
+          If passed to development unresolved, each developer will interpret the conflict differently. One implementation may reject valid edge-case emails; another may accept free-form strings that break downstream email dispatch. The inconsistency surfaces as a production bug only when a real user tries to register with a valid but non-standard address — at which point it is an authentication failure with no clean audit trail.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="pass">Rule 1 — valid email format required</li>
+              <li class="fail">Rule 3 — "any character" contradicts Rule 1</li>
+              <li class="fail">No priority order defined between conflicting rules</li>
+              <li class="fail">No examples provided to clarify intent</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Remove Rule 3 or rewrite it as a subset of RFC 5321 allowed characters</li>
+              <li>Add an examples section to the spec illustrating valid and invalid inputs</li>
+              <li>Introduce a rule priority order for any future conflicts</li>
+              <li>Reference a formal standard (RFC 5321 / 5322) instead of writing custom character rules</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SPEC 02 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">SPEC 02</span>
+        <span class="card-title">No Maximum Length Defined for Either Field</span>
+        <span class="badge badge-defect">defect · medium</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">Specification document — all four rules (omission)</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Requirements writer / product owner</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Missing boundary constraint — upper limit absent</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            None of the four rules define a maximum acceptable length for the login or the password. Without an upper bound, both fields are technically unbounded. A specification that defines a minimum (implicitly: a valid email, 6 characters for the password) but no maximum is incomplete. Boundary value analysis — a standard test design technique — requires both bounds to generate valid test cases. This is not only a specification gap but an unaddressed attack surface.
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P3 — Early Testing</span>
+              <span class="pill pill-purple">P7 — Absence-of-Errors Fallacy</span>
+            </div>
+            <p class="principle-note">A system that passes all minimum-bound tests can still fail under legitimate extreme inputs. The absence of a max-length constraint does not mean no upper limit exists in practice — it means the limit is undefined and untestable.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Static Testing</span>
+              <span class="pill">Boundary Value Analysis</span>
+              <span class="pill">Specification Review</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Add explicit max-length constraints for both fields. Industry standards suggest a maximum of 254 characters for an email address (RFC 5321 limit). For a 6-digit password, the maximum should equal the minimum: exactly 6 characters — making this also relevant to SPEC 03 below.
+        </div>
+
+        <div class="cascade-box">
+          Without a maximum length, a malicious user can submit a 10,000-character string in either field. Depending on the backend, this may cause a database column overflow, a RegExp catastrophic backtracking vulnerability (ReDoS) against the email pattern, or an unhandled exception. It is also a denial-of-service vector if the server processes each character sequentially.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="warn">Minimum length implied (valid email, 6-char password)</li>
+              <li class="fail">No maximum length defined for the login field</li>
+              <li class="fail">No maximum length defined for the password field</li>
+              <li class="fail">Boundary conditions are untestable as written</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Add explicit max length for email: 254 chars (RFC 5321)</li>
+              <li>Add explicit max length for password matching the exact-6 constraint</li>
+              <li>Include a boundary value table in the spec to formalise all limits</li>
+              <li>Specify behaviour when input exceeds max (reject vs truncate)</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SPEC 03 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">SPEC 03</span>
+        <span class="card-title">Password Constraint Ambiguous — "6 Numbers" Underspecified and Insecure</span>
+        <span class="badge badge-defect">defect · high</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">Specification document — Rule 4</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Requirements writer / product owner + security reviewer</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Ambiguous constraint + critical security gap</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            Rule 4 states "the password must be 6 numbers." This is ambiguous on two axes. First, cardinality: does "6 numbers" mean exactly 6 digits, or at least 6, or a minimum of 6 numeric characters within a longer string? Second, composition: does "numbers" mean the password must consist exclusively of digits, or merely contain 6 digits among other characters? A developer reading this rule cannot produce a deterministic implementation. Beyond ambiguity, if "exactly 6 digits" is the intended interpretation, this is a critically weak password policy. A 6-digit numeric password has exactly 1,000,000 possible combinations (000000–999999), which any automated brute-force tool can exhaust in seconds without rate limiting.
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P3 — Early Testing</span>
+              <span class="pill pill-purple">P1 — Testing Shows Presence of Defects</span>
+            </div>
+            <p class="principle-note">This rule would pass a surface-level review but fails any security-focused static analysis. The specification review is precisely the stage to catch security requirements that are structurally weak before they become implemented policy.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Static Testing</span>
+              <span class="pill">Security Review</span>
+              <span class="pill">Specification Review</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Rewrite Rule 4 to specify: minimum length (recommend 8+ characters), required character classes (uppercase, lowercase, digit, special character), and whether digits must be present or the password must consist solely of digits. If the application handles sensitive data, align with OWASP password policy guidelines instead of defining a custom rule.
+        </div>
+
+        <div class="cascade-box">
+          If exactly 6 digits is implemented as written, any user account on this system is vulnerable to brute-force attack. With no lockout policy specified (also absent from the specs), an attacker can attempt all 1,000,000 combinations programmatically. Combined with a guessed or leaked email address, this gives full account access. The specification as written essentially documents a deliberately weak security posture.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="fail">Cardinality ambiguous — exactly 6 vs minimum 6 not stated</li>
+              <li class="fail">Composition ambiguous — digits only vs digits within string</li>
+              <li class="fail">No account lockout or rate-limiting policy mentioned</li>
+              <li class="fail">No reference to a security standard or compliance requirement</li>
+              <li class="warn">A constraint exists — but it is too weak to provide meaningful protection</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Replace "6 numbers" with an explicit regex or character policy</li>
+              <li>Raise minimum length to 8+ characters and require mixed character classes</li>
+              <li>Add an account lockout rule after N failed attempts</li>
+              <li>Reference OWASP Authentication Cheat Sheet as the governing standard</li>
+              <li>Consider hashed storage requirements as a companion spec rule</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /spec cards -->
+
+  <!-- ══════════════ SECTION: CODE ══════════════ -->
+  <div class="section-header" style="margin-top:56px;">
+    <h3>Code Anomalies</h3>
+  </div>
+
+  <div class="cards">
+
+    <!-- CODE 01 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">CODE 01</span>
+        <span class="card-title">Email Regex Restricts to Gmail Only — Unauthorised Scope Reduction</span>
+        <span class="badge badge-defect">defect · high</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">validationForm.js — Line 7, comment line 5</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Developer — must align implementation with specifications</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Code contradicts the specification it was written to implement</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            The specification states the login must be "any valid mail address." The code comment on line 5 reads "must be a valid Gmail address" and the regex on line 7 enforces <code>@gmail\.com</code> as the only accepted domain. This is a unilateral scope reduction introduced by the developer without specification authority. Yahoo, Outlook, ProtonMail, corporate, educational, and government email addresses are all rejected. The comment also misrepresents the regex scope — a Gmail address can have domains like <code>@googlemail.com</code>, which this regex would also reject.
+          </div>
+          <div class="code-block">const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+// spec says: "any valid mail address"
+// code enforces: @gmail.com only</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P1 — Testing Shows Presence of Defects</span>
+              <span class="pill pill-purple">P3 — Early Testing</span>
+            </div>
+            <p class="principle-note">This defect would not surface until integration testing at the earliest — and only if a non-Gmail address is used in the test data. Static review of the code against the specification catches it immediately, at zero cost.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Component Testing</span>
+              <span class="pill">Functional</span>
+              <span class="pill">Spec Conformance</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Replace the hardcoded <code>@gmail\.com</code> domain with a standard email validation pattern that accepts any valid domain (e.g. <code>/^[^\s@]+@[^\s@]+\.[^\s@]+$/</code> as a minimal approach, or use a well-tested library). Update the comment on line 5 to accurately describe the rule being applied.
+        </div>
+
+        <div class="cascade-box">
+          Every user who attempts to register with a non-Gmail address will be silently rejected with a misleading error message ("Please enter a valid Gmail address") — which is itself wrong since the product never stated Gmail was a requirement. This is a user-facing functional defect that silently excludes a large portion of the user base and constitutes a discriminatory access restriction not sanctioned by the specifications.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="fail">Spec says "any valid mail address" — code enforces @gmail.com only</li>
+              <li class="fail">Comment on line 5 misrepresents the specification requirement</li>
+              <li class="fail">Domain constraint introduced without specification authority</li>
+              <li class="fail">Error message shown to user does not match any specified rule</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Replace hardcoded domain with a generic RFC-compliant email pattern</li>
+              <li>Use a well-maintained validation library (e.g. validator.js) instead of a hand-rolled regex</li>
+              <li>Update error messages to match the language used in the specifications</li>
+              <li>Add a comment citing the spec rule number being enforced per block</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CODE 02 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">CODE 02</span>
+        <span class="card-title">Uppercase Letters Permitted in Email — Violates Spec Rule 2</span>
+        <span class="badge badge-defect">defect · medium</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">validationForm.js — Line 7 regex character class</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Developer — must enforce lowercase-only login</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Regex explicitly allows A–Z, contradicting specification Rule 2</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            Specification Rule 2 states the login must be lowercase. The regex on line 7 includes the range <code>A-Z</code> in its character class, meaning uppercase letters in the local part of the email address are explicitly accepted. An input like <code>HIBA@gmail.com</code> would pass validation. The developer implemented no case-normalisation step, no case-rejection logic, and no lowercase enforcement of any kind.
+          </div>
+          <div class="code-block">const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+//                       ^^^^ A-Z explicitly allowed
+// spec rule 2: login must be lowercase</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P1 — Testing Shows Presence of Defects</span>
+            </div>
+            <p class="principle-note">This defect would pass all happy-path tests using lowercase inputs, remaining invisible until a tester specifically submits an uppercase email. Static review of the regex against the spec requirement catches it without a single test execution.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Component Testing</span>
+              <span class="pill">Functional</span>
+              <span class="pill">Spec Conformance</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Either remove <code>A-Z</code> from the character class so the regex rejects uppercase inputs at the pattern level, or normalise the input to lowercase before validation using <code>email.toLowerCase()</code>. The latter is safer from a UX standpoint — users who type <code>Hiba@gmail.com</code> should not be penalised for capitalisation when the system can silently normalise.
+        </div>
+
+        <div class="cascade-box">
+          If this reaches production, two users could register with <code>hiba@gmail.com</code> and <code>HIBA@gmail.com</code> as distinct accounts if the backend also fails to normalise. This creates duplicate accounts, split user history, and a login mismatch bug where the user who registered with uppercase cannot log in with lowercase — or vice versa depending on storage format.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="fail">Spec Rule 2 requires lowercase — A-Z range explicitly present in regex</li>
+              <li class="fail">No .toLowerCase() normalisation before validation</li>
+              <li class="fail">No case-rejection branch in the validation logic</li>
+              <li class="warn">Spec Rule 2 itself doesn't clarify whether to reject or normalise</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Normalise input with email.toLowerCase() before any validation runs</li>
+              <li>Remove A-Z from the regex character class as a secondary guard</li>
+              <li>Persist the normalised (lowercase) value to storage, not the raw input</li>
+              <li>Update the spec to explicitly state "normalise to lowercase" vs "reject if uppercase"</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CODE 03 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">CODE 03</span>
+        <span class="card-title">Password Validation Checks Only Minimum Length — Ignores Digit-Only and Exact-6 Constraints</span>
+        <span class="badge badge-defect">defect · high</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">validationForm.js — Lines 14–16, comment line 12</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Developer — must implement the full password rule, not a subset of it</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Implementation satisfies neither the type constraint nor the cardinality constraint of Rule 4</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            Specification Rule 4 says "the password must be 6 numbers." The code checks only <code>password.length &lt; 6</code> — a minimum length check with no upper bound and no type constraint. This means: (1) a password of 7, 100, or 1000 characters passes; (2) a password consisting entirely of letters like <code>abcdef</code> passes; (3) a mixed input like <code>abc123</code> passes. None of these satisfy "6 numbers." The comment on line 12 further misrepresents the rule as "at least 6 characters," which is neither what the spec says nor what a secure system would implement.
+          </div>
+          <div class="code-block">// Password validation (at least 6 characters)   ← comment is wrong
+if (password.length &lt; 6) {                       ← minimum only, no max, no digit check
+  console.log("Password must be at least 6 characters.");
+  valid = false;
+}</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P1 — Testing Shows Presence of Defects</span>
+              <span class="pill pill-purple">P3 — Early Testing</span>
+            </div>
+            <p class="principle-note">This defect is invisible to any test that only submits a 6-digit password. It surfaces only on boundary and equivalence class tests — which static review can anticipate without running a single case.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Component Testing</span>
+              <span class="pill">Equivalence Partitioning</span>
+              <span class="pill">Boundary Value Analysis</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          If the spec intends exactly 6 digits: <code>/^\d{6}$/</code> — a single regex that enforces both constraints. If the spec intends at least 6 digits: <code>/^\d{6,}$/</code>. The ambiguity in the spec (SPEC 03) must be resolved first by the product owner before the developer can write a correct check. This code defect is partly a downstream consequence of SPEC 03.
+        </div>
+
+        <div class="cascade-box">
+          With this implementation, any string of 6 or more characters is a valid password — including a password that is the user's name, a word in a dictionary, or a blank-padded string. The password field provides no actual security constraint. If combined with the Gmail-only restriction that narrows the login space, an attacker needs only to guess a Gmail address and submit any 6-character string to have a non-negligible probability of access.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="fail">No digit-only enforcement — letters and symbols accepted</li>
+              <li class="fail">No upper bound — passwords longer than 6 pass</li>
+              <li class="fail">Comment on line 12 misrepresents the rule ("at least 6 chars")</li>
+              <li class="warn">Minimum length of 6 is partially satisfied — but for wrong reasons</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Use /^\d{6}$/ to enforce exactly 6 digits in a single expression</li>
+              <li>Update the comment to accurately describe the rule being checked</li>
+              <li>Pending SPEC 03 resolution, implement the corrected rule in the same commit</li>
+              <li>Add a dedicated isValidPassword() function to isolate and test this logic independently</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CODE 04 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">CODE 04</span>
+        <span class="card-title">No Maximum Length Enforced on Either Field</span>
+        <span class="badge badge-defect">defect · medium</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">validationForm.js — entire function (omission)</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Developer — enforce upper bounds on both inputs</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Missing boundary guard — no upper limit enforced in code</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Anomaly</div>
+          <div class="section-content">
+            Neither the email nor the password field has any maximum length check in the code. The email regex uses <code>+</code> quantifiers (one or more) with no upper bound, and the password check only rejects inputs shorter than 6 characters. An arbitrarily long string passes both validations. This mirrors the omission in SPEC 02 but is a separate code-level defect — even if the specification had defined max lengths, the code would still not enforce them.
+          </div>
+          <div class="code-block">// Email: uses [a-zA-Z0-9._%+-]+  — no max length
+// Password: only checks password.length &lt; 6  — no upper bound
+// Both fields accept arbitrarily long inputs</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P3 — Early Testing</span>
+              <span class="pill pill-purple">P7 — Absence-of-Errors Fallacy</span>
+            </div>
+            <p class="principle-note">Passing all minimum-bound tests says nothing about what happens at extreme input lengths. The absence of a test for a 10,000-character password does not mean the system handles it correctly.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Component Testing</span>
+              <span class="pill">Boundary Value Analysis</span>
+              <span class="pill">Security Testing</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Add explicit upper-bound checks: <code>email.length &gt; 254</code> should return invalid (RFC 5321 maximum). For a 6-digit password, the check should be <code>password.length !== 6</code> rather than <code>password.length &lt; 6</code>, enforcing both bounds simultaneously.
+        </div>
+
+        <div class="cascade-box">
+          A payload of 100,000 characters submitted as an email address will pass the regex test (potentially triggering catastrophic backtracking depending on the engine) and proceed to the backend. If the backend stores this in a VARCHAR column without length enforcement, it causes a database error or silent truncation. If it reaches a logging system, it inflates log storage and may overwrite surrounding log entries — a known log injection vector.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="fail">No maximum length check on email input</li>
+              <li class="fail">No maximum length check on password input</li>
+              <li class="fail">Regex + quantifiers have no upper bound</li>
+              <li class="warn">Mirrors SPEC 02 omission — both layers unprotected</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Add email.length &gt; 254 guard before the regex test</li>
+              <li>Replace password.length &lt; 6 with password.length !== 6 once spec is clarified</li>
+              <li>Consider HTML maxlength attributes on input elements as a first line of defence</li>
+              <li>Add input sanitisation step before any validation logic runs</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CODE 05 — minor flag -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">CODE 05</span>
+        <span class="card-title">Missing Closing Brace on Email Validation Block — Structural Flag</span>
+        <span class="badge badge-warn">minor · observation</span>
+      </div>
+      <div class="card-body">
+
+        <div class="role-row">
+          <div class="role-box role-scribe">
+            <div class="role-label">Scribed in</div>
+            <div class="role-value">validationForm.js — Lines 8–11 (if block)</div>
+          </div>
+          <div class="role-box role-actor">
+            <div class="role-label">Must act</div>
+            <div class="role-value">Developer — verify brace pairing and intended scope</div>
+          </div>
+          <div class="role-box role-stmt">
+            <div class="role-label">Statement</div>
+            <div class="role-value">Structural ambiguity — closing brace of email if-block not clearly visible</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Observation</div>
+          <div class="section-content">
+            The <code>if (!emailPattern.test(email))</code> block on line 8 opens a brace. Based on the code image, its corresponding closing brace on line 11 is present, but the password validation block starting at line 14 sits outside the closing brace of the email block. This is flagged as a minor structural observation because the indentation and layout of the code makes the scope boundaries non-obvious at a glance, which is a readability risk even if syntactically correct. This is raised as an observation, not a defect, pending code execution or syntax verification.
+          </div>
+          <div class="code-block">if (!emailPattern.test(email)) {     // line 8
+  console.log("...");               // line 9
+  valid = false;                    // line 10
+}                                   // line 11 — closes email block
+ // password check begins here ↓
+if (password.length &lt; 6) {          // line 14</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-section">
+            <div class="section-label">ISTQB Principles</div>
+            <div class="pills">
+              <span class="pill pill-purple">P3 — Early Testing</span>
+            </div>
+            <p class="principle-note">Structural issues caught during code review prevent misreads during future maintenance. A developer modifying this function under time pressure may misplace a block inside the wrong scope.</p>
+          </div>
+          <div class="sub-section">
+            <div class="section-label">Test Level &amp; Type</div>
+            <div class="pills">
+              <span class="pill pill-pink">Static Testing</span>
+              <span class="pill">Code Review</span>
+              <span class="pill">Structural</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          Flag for developer verification. If syntactically correct, add a blank line and a clarifying comment to mark the boundary between the two validation blocks. Consider extracting each validation into a named function (<code>isValidEmail()</code>, <code>isValidPassword()</code>) to make scope boundaries structurally impossible to misread.
+        </div>
+
+        <div class="cascade-box">
+          Low immediate risk if the brace pairing is correct. The concern is maintainability: the next developer to edit this function may nest a new condition inside the wrong block, causing a logic error where both email and password validations share a conditional scope they were never intended to share.
+        </div>
+
+        <div class="checklist-wrap">
+          <div class="checklist-block">
+            <div class="section-label">Spec compliance checklist</div>
+            <ul class="checklist">
+              <li class="warn">Brace pairing appears correct but scope boundaries are visually ambiguous</li>
+              <li class="warn">No separator or comment marking end of email block</li>
+              <li class="pass">Password block is logically separate from email block</li>
+              <li class="warn">No linter or formatting tool output referenced</li>
+            </ul>
+          </div>
+          <div class="checklist-block">
+            <div class="section-label">Enhancement propositions</div>
+            <ul class="enhance-list">
+              <li>Add a blank line and // --- end email validation comment between blocks</li>
+              <li>Extract into isValidEmail() and isValidPassword() named functions</li>
+              <li>Run a linter (ESLint) to catch scope and formatting issues automatically</li>
+              <li>Adopt a consistent brace style guide (Allman vs K&amp;R) across the codebase</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /code cards -->
+
+  <!-- ══════════════ CONCLUSION ══════════════ -->
+  <div class="conclusion">
+    <h3>// Conclusion</h3>
+    <p>
+      This individual review identified <strong>3 specification anomalies</strong> and <strong>5 code anomalies</strong> across the two work products distributed by the test manager.
+      The most critical findings are the <strong>contradictory specification rules</strong> (SPEC 01), the <strong>weak and ambiguous password policy</strong> (SPEC 03), the <strong>unauthorised Gmail-only restriction</strong> (CODE 01), and the <strong>incomplete password validation logic</strong> (CODE 03).
+      Several code defects are partially downstream consequences of underspecified requirements — most notably, the developer could not have implemented a correct password check without a clearer specification to work from.
+      It is recommended that the specification be revised before any further development work proceeds on this form. A follow-up review should be scheduled after fixes are applied to verify resolution. No work product in the current state should be approved for integration.
+    </p>
+  </div>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer>
+    <span>GOMYCODE · Static Testing Checkpoint · Hiba Hantous · March 2025</span>
+    <span>8 items — 6 defects · 2 observations</span>
+  </footer>
+
+</div>
+</body>
+</html>
